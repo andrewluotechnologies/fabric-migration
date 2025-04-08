@@ -3,8 +3,13 @@ import json
 import os
 import requests
 import base64
+import types
 
 from notebookutils import mssparkutils
+
+class FabricSparkUtilitiesCredential:
+    def get_token(scope: str):
+        return types.SimpleNamespace(token=mssparkutils.credentials.getToken(scope))
 
 class Utils:
 
@@ -22,7 +27,7 @@ class Utils:
         resource_type = "notebooks"
         Utils.export_resources(resource_type, credential, synapse_workspace_name, output_folder)
 
-    def import_notebooks(output_folder, workspace_id, prefix, notebook_names=None):
+    def import_notebooks(credential, output_folder, workspace_id, prefix, notebook_names=None):
         date = datetime.now().strftime('%Y_%m_%dT%H_%M_%S')
         resource_type = "notebooks"
         res_imported = 0
@@ -44,16 +49,16 @@ class Utils:
                 with open(file_path, "r", encoding='utf-8') as read_file:
                     ntbk_json = json.load(read_file)
                 ntbk_name = f"{prefix}_{notebook_name}"
-                Utils.import_notebook(ntbk_name, ntbk_json, workspace_id, False)
+                Utils.import_notebook(credential, ntbk_name, ntbk_json, workspace_id, False)
                 res_imported += 1
 
         resources_imported[resource_type] = res_imported
         print(f"Finish importing {res_imported} items of type: {resource_type}")
         
-    def import_notebook(ntbk_name, ntbk_json, workspace_id, overwrite=False):
+    def import_notebook(credential, ntbk_name, ntbk_json, workspace_id, overwrite=False):
 
         api_endpoint = "api.fabric.microsoft.com"
-        pbi_token = mssparkutils.credentials.getToken('https://analysis.windows.net/powerbi/api') 
+        pbi_token = credential.get_token('https://analysis.windows.net/powerbi/api').token
 
         print(f"Importing '{ntbk_name}'...")
         url = f"https://{api_endpoint}/v1/workspaces/{workspace_id}/items"
@@ -97,10 +102,10 @@ class Utils:
         resource_type = "sparkJobDefinitions"
         Utils.export_resources(resource_type, credential, synapse_workspace_name, output_folder)
 
-    def import_sjd(sjd_name, sjd_json, workspace_id, overwrite=False):
+    def import_sjd(credential, sjd_name, sjd_json, workspace_id, overwrite=False):
 
         api_endpoint = "api.fabric.microsoft.com"
-        pbi_token = mssparkutils.credentials.getToken('https://analysis.windows.net/powerbi/api') 
+        pbi_token = credential.get_token('https://analysis.windows.net/powerbi/api').token
 
         print(f"Importing '{sjd_name}'...")
         url = f"https://{api_endpoint}/v1/workspaces/{workspace_id}/items"
@@ -138,7 +143,7 @@ class Utils:
         else:
             raise RuntimeError(f"SJD '{sjd_name}' creation failed: {response.status_code}: {response.text}")
         
-    def import_sjd_from_json(sjd_name, sjd_json, workspace_id, lakehouse_id, overwrite=False):
+    def import_sjd_from_json(credential, sjd_name, sjd_json, workspace_id, lakehouse_id, overwrite=False):
 
         executable_file_path = sjd_json["properties"]["jobProperties"]["file"]
         language = sjd_json["properties"]["language"]
@@ -164,9 +169,9 @@ class Utils:
             "environmentArtifactId":None
         }
     
-        Utils.import_sjd(sjd_name, workload_json, workspace_id, False)
+        Utils.import_sjd(credential, sjd_name, workload_json, workspace_id, False)
 
-    def import_sjds(output_folder, workspace_id, lakehouse_id, prefix, sjd_names=None):
+    def import_sjds(credential, output_folder, workspace_id, lakehouse_id, prefix, sjd_names=None):
         resource_type = "sparkJobDefinitions"
         res_imported = 0
         resources_imported = {}
@@ -187,7 +192,7 @@ class Utils:
                 with open(file_path, "r", encoding='utf-8') as read_file:
                     sjd_json = json.load(read_file)
                 full_sjd_name = f"{prefix}_{sjd_name}"
-                Utils.import_sjd_from_json(full_sjd_name, sjd_json, workspace_id, lakehouse_id, False)
+                Utils.import_sjd_from_json(credential, full_sjd_name, sjd_json, workspace_id, lakehouse_id, False)
                 res_imported += 1
 
         resources_imported[resource_type] = res_imported
