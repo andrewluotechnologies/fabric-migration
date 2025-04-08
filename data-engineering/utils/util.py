@@ -8,26 +8,6 @@ from notebookutils import mssparkutils
 
 class Utils:
 
-    # Synapse utils
-
-    def get_access_token(azure_client_id, azure_tenant_id, azure_client_secret):
-        url = f"https://login.microsoftonline.com/{azure_tenant_id}/oauth2/token"
-
-        payload = {
-            "grant_type": "client_credentials",
-            "client_id": {azure_client_id},
-            "client_secret": {azure_client_secret},
-            "resource": f"https://dev.azuresynapse.net/"
-        }
-
-        headers = {'Content-Type': 'application/x-www-form-urlencoded'}
-
-        response = requests.post(url, data=payload, headers=headers)
-        response_json = json.loads(response.text)
-        synapse_dev_token = response_json["access_token"]
-
-        return synapse_dev_token
-
     # Notebook utils
 
     def clean_notebook_cells(ntbk_json, tags_to_clean):
@@ -38,9 +18,9 @@ class Utils:
 
         return ntbk_json
 
-    def export_notebooks(azure_client_id, azure_tenant_id, azure_client_secret, synapse_workspace_name, output_folder):
+    def export_notebooks(credential, synapse_workspace_name, output_folder):
         resource_type = "notebooks"
-        Utils.export_resources(resource_type, azure_client_id, azure_tenant_id, azure_client_secret, synapse_workspace_name, output_folder)
+        Utils.export_resources(resource_type, credential, synapse_workspace_name, output_folder)
 
     def import_notebooks(output_folder, workspace_id, prefix, notebook_names=None):
         date = datetime.now().strftime('%Y_%m_%dT%H_%M_%S')
@@ -113,9 +93,9 @@ class Utils:
 
     # SJD utils
 
-    def export_sjd(azure_client_id, azure_tenant_id, azure_client_secret, synapse_workspace_name, output_folder):
+    def export_sjd(credential, synapse_workspace_name, output_folder):
         resource_type = "sparkJobDefinitions"
-        Utils.export_resources(resource_type, azure_client_id, azure_tenant_id, azure_client_secret, synapse_workspace_name, output_folder)
+        Utils.export_resources(resource_type, credential, synapse_workspace_name, output_folder)
 
     def import_sjd(sjd_name, sjd_json, workspace_id, overwrite=False):
 
@@ -215,11 +195,11 @@ class Utils:
 
     # Generic
 
-    def export_resources(resource_type, azure_client_id, azure_tenant_id, azure_client_secret, synapse_workspace_name, output_folder):
+    def export_resources(resource_type, credential, synapse_workspace_name, output_folder):
 
         base_uri = f"{synapse_workspace_name}.dev.azuresynapse.net"
         api_version = "2020-12-01"
-        synapse_dev_token = Utils.get_access_token(azure_client_id, azure_tenant_id, azure_client_secret)
+        synapse_dev_token = credential.get_token("https://dev.azuresynapse.net/").token
         res_exported = 0
         resources_exported = {}
 
