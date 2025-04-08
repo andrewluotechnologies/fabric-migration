@@ -48,7 +48,10 @@ class Utils:
             if os.path.exists(file_path):
                 with open(file_path, "r", encoding='utf-8') as read_file:
                     ntbk_json = json.load(read_file)
-                ntbk_name = f"{prefix}_{notebook_name}"
+                if prefix:
+                    ntbk_name = f"{prefix}_{notebook_name}"
+                else:
+                    ntbk_name = notebook_name
                 Utils.import_notebook(credential, ntbk_name, ntbk_json, workspace_id, False)
                 res_imported += 1
 
@@ -191,7 +194,10 @@ class Utils:
             if os.path.exists(file_path):
                 with open(file_path, "r", encoding='utf-8') as read_file:
                     sjd_json = json.load(read_file)
-                full_sjd_name = f"{prefix}_{sjd_name}"
+                if prefix:
+                    full_sjd_name = f"{prefix}_{sjd_name}"
+                else:
+                    full_sjd_name = sjd_name
                 Utils.import_sjd_from_json(credential, full_sjd_name, sjd_json, workspace_id, lakehouse_id, False)
                 res_imported += 1
 
