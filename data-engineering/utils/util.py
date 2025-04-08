@@ -242,7 +242,9 @@ class Utils:
                         file_name = f"{resource_name}.ipynb"
                         data = json.dumps(updated_ntbk_json, indent=4)
                     
-                    mssparkutils.fs.put(f"{output_folder}/{resource_type}/{file_name}", data, False)
+                    os.makedirs(f"{output_folder}/{resource_type}", exist_ok=True)
+                    with open(f"{output_folder}/{resource_type}/{file_name}", "w") as file:
+                        file.write(data)
                     res_exported += 1
                     resources_exported[resource_type] = res_exported
                     
